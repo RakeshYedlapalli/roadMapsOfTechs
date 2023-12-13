@@ -1,1 +1,92 @@
-this is first commmit and this is last commit
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+	<springProfile name="!dev,!dev-cty,!int,!int-cty,!pre,!pre2,!prd,!stg,!uat2">
+		<include resource="org/springframework/boot/logging/logback/defaults.xml" />
+	</springProfile>
+	<include resource="org/springframework/boot/logging/logback/console-appender.xml" />
+	<springProperty scope="context" name="logFolder" source="com.cacib.loanscape.ldt.log.folder" defaultValue="./log" />
+	<springProperty scope="context" name="logFile" source="com.cacib.loanscape.ldt.log.filename" defaultValue="logs" />
+	<springProperty scope="context" name="logFileExtention" source="com.cacib.loanscape.ldt.log.file.extention" defaultValue="log" />
+	<springProperty scope="context" name="appRootLogLevel" source="com.cacib.loanscape.ldt.log.root" defaultValue="TRACE" />
+	<springProperty scope="context" name="appName" source="spring.application.name" />
+	<springProperty scope="context" name="componentName" source="spring.application.component.name" />
+	<springProperty scope="context" name="envName" source="spring.application.env" />
+	<timestamp key="timestamp-by-second" datePattern="yyyy-MM-dd'T'HH:mm:ss.SSSZ" />
+	<timestamp key="timestamp-by-day" datePattern="yyyy-MM-dd" />
+
+	<springProfile name="!dev,!dev-cty,!int,!int-cty,!pre,!pre2,!prd,!stg,!uat2">
+		<appender name="consoleAppender" class="ch.qos.logback.core.ConsoleAppender">
+			<encoder>
+				<pattern>[CorrelationId:%X{correlationId}] - ${CONSOLE_LOG_PATTERN}</pattern>
+			</encoder>
+		</appender>
+	</springProfile>
+
+	<springProfile name="dev,dev-cty,int,int-cty,pre,pre2,prd,stg,uat2,default">
+		<appender name="rollingFileAppender" class="ch.qos.logback.core.rolling.RollingFileAppender">
+			<file>${logFolder}/${logFile}.${logFileExtention}</file>
+			<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+				<fileNamePattern>${logFolder}/${logFile}.%d{yyyy-MM-dd}.${logFileExtention}</fileNamePattern>
+			</rollingPolicy>
+			<encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+				<providers>
+					<logstashMarkers />
+					<pattern>
+						<pattern>
+							{
+								"@t": "%date{yyyy-MM-dd'T'HH:mm:ss.SSSZ}",
+								"@s": "%level",
+								"@m": "%message",
+								"@sql": "#asJson{%mdc{sqlRequest}}",
+								"@e": "${envName:-}",
+								"@a": "${appName:-}",
+								"@cp": "${componentName:-}",
+								"@scp": "%logger{40}",
+								"@u": "#asJson{%mdc{user}}",
+								"@h": "%mdc{host}",
+								"@co": "%mdc{correlationId}",
+								"@v": "%mdc{version}",
+								"@st": "%exception{full}"
+							}
+						</pattern>
+					</pattern>
+				</providers>
+			</encoder>
+		</appender>
+	</springProfile>
+
+	<root level="${appRootLogLevel}">
+		<springProfile name="!dev,!dev-cty,!int,!int-cty,!pre,!pre2,!prd,!stg,!uat2">
+			<appender-ref ref="consoleAppender" />
+		</springProfile>
+		<springProfile name="dev,dev-cty,int,int-cty,pre,pre2,prd,stg,uat2,default">
+			<appender-ref ref="rollingFileAppender" />
+		</springProfile>
+	</root>
+
+	<logger name="com.cacib" level="DEBUG" />
+	<logger name="org.hibernate" level="INFO" />
+	<logger name="org.hibernate.SQL" level="ERROR" />
+	<logger name="org.springframework.jdbc.core.JdbcTemplate" level="ERROR" />
+	<logger name="org.springframework.boot.devtools" level="INFO" />
+	<logger name="org.springframework.boot" level="TRACE" />
+	<logger name="org.springframework.boot.web" level="INFO" />
+	<logger name="org.springframework.boot.liquibase" level="INFO" />
+	<logger name="org.springframework" level="INFO" />
+	<logger name="com.zaxxer" level="INFO" />
+	<logger name="liquibase" level="ERROR" />
+	<logger name="LiquibaseSchemaResolver" level="ERROR" />
+	<logger name="org.apache.tomcat.util" level="INFO" />
+	<logger name="org.apache.catalina.session" level="ERROR" />
+	<logger name="javax.management" level="INFO" />
+	<logger name="org.apache.catalina.loader" level="ERROR" />
+	<logger name="springfox.documentation.spring.web" level="ERROR" />
+	<logger name="org.postgresql" level="INFO" />
+	<logger name="org.keycloak.adapters" level="ERROR" />
+	<logger name="org.docx4j" level="WARN" />
+	<logger name="org.apache.coyote" level="INFO" />
+	<logger name="org.springframework.boot.actuate" level="INFO" />
+	<logger name="com.cacib.loanscape.rpx.api" level="INFO" />
+	<logger name="springfox.documentation" level="INFO" />
+
+</configuration>
