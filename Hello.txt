@@ -90,3 +90,27 @@
 	<logger name="springfox.documentation" level="INFO" />
 
 </configuration>
+
+
+-----------------------------------------
+
+
+public Optional<Opportunity> fetch(Long id) {
+    var optionalDeal = dealService.fetchDeal(id);
+    optionalDeal.ifPresent(deal -> {
+      Collection<EDealActor> dealActors = dealActorService.findByDealId(id);
+      CompletableFuture<Void> commercialClientCF = CompletableFuture.runAsync(() -> dealActorService.setCommercialClients(deal, dealActors), threadPoolTaskExecutor);
+      CompletableFuture<Void> validationsCF = CompletableFuture.runAsync(() -> dealService.getAllValidations(deal), threadPoolTaskExecutor);
+      CompletableFuture<Void> counterpartiesCF = CompletableFuture.runAsync(() -> setCounterparties(deal, dealActors), threadPoolTaskExecutor);
+      CompletableFuture<Void> combinedCF = CompletableFuture.allOf(commercialClientCF, validationsCF, counterpartiesCF);
+      try {
+        combinedCF.get();
+      } catch (ExecutionException e) {
+        throw new LdtTechnicalException(e);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new LdtTechnicalException(e);
+      }
+    });
+    return optionalDeal.map(opportunityDealMapper::toOpportunityDto);
+  }
