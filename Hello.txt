@@ -114,3 +114,90 @@ public Optional<Opportunity> fetch(Long id) {
     });
     return optionalDeal.map(opportunityDealMapper::toOpportunityDto);
   }
+
+
+-------------------------------
+
+Caused by: liquibase.exception.MigrationFailedException: Migration failed for changeset liquibase/1.6.0/homepage-view-update.xml::add-product-line-and-teams-to-homepage-view-h2::ut2z9g:
+     Reason: liquibase.exception.DatabaseException: Duplicate column name "LAST_MODIFIED_DATE"; SQL statement:
+CREATE OR REPLACE VIEW LDT.homepage_view AS select deal.id as DealId,
+            deal.file_name as Filename,
+            deal.target_borrower_sponsor as TargetBorrowerSponsor,
+            st.name as SyndicationType,
+            deal.country as Country,
+            deal.region as Region,
+            deal.currency as Currency,
+            deal.business_area_id as BusinessArea,
+            cl.name as ConfidentialityLevel,
+            deal.sti_one_id as STIOne,
+            deal.smac_id as Smac,
+            deal.created_date as created_date,
+            group_concat(distinct db.ricos_id) as Borrowers,
+            group_concat(distinct s.name) as Statuses,
+            state.name as State,
+            ms.name as MarketSegment,
+            pl.name as ProductLine,
+            deal.debt_domain_id as DebtDomainId,
+            bool_and(cc.rpc_mandatory) as RPCMandatory,
+            f.booking_entity as BookingEntity,
+            group_concat(distinct ott.name order by ott.name) as OriginationTeams,
+            group_concat(distinct dtt.name order by dtt.name) as DistributionTeams,
+            dlud.last_modified_date as last_modified_date
+            from ldt.deals as deal
+            left join ldt.syndication_types as st on st.code = deal.syndicationtype_code
+            left join ldt.confidentiality_levels as cl on cl.code = deal.confidentialitylevel_code
+            left join ldt.market_segments as ms on ms.code = deal.marketsegment_code
+            left join ldt.product_lines as pl on pl.code = deal.productline_code
+            left join ldt.deals_statuses as ds on ds.deal_id = deal.id
+            left join ldt.statuses as s on s.code = ds.status_code
+            left join ldt.states as state on state.code = deal.state_code
+            left join ldt.deals_borrowers as db on db.deal_id = deal.id
+            left join ldt.credit_committees as cc on cc.deal_id = deal.id
+            left join ldt.finalizations as f on f.deal_id = deal.id
+            left join ldt.deals_origination_teams as ot on ot.deals_id = deal.id
+            left join ldt.deals_distribution_teams as dt on dt.deals_id = deal.id
+            left join ldt.teams as ott on ott.code = ot.originationteams_code and ott.team_type = 'ORIGINATION'
+            left join ldt.teams as dtt on dtt.code = dt.distributionteams_code and dtt.team_type = 'DISTRIBUTION'
+            left join ldt.deal_last_update_date as dlud on dlud.id = deal.id
+            group by deal.id, st.name, cl.name, f.booking_entity, state.name, ms.name, pl.name, dlud.last_modified_date [42121-199] [Failed SQL: (42121) CREATE OR REPLACE VIEW LDT.homepage_view AS select deal.id as DealId,
+            deal.file_name as Filename,
+            deal.target_borrower_sponsor as TargetBorrowerSponsor,
+            st.name as SyndicationType,
+            deal.country as Country,
+            deal.region as Region,
+            deal.currency as Currency,
+            deal.business_area_id as BusinessArea,
+            cl.name as ConfidentialityLevel,
+            deal.sti_one_id as STIOne,
+            deal.smac_id as Smac,
+            deal.created_date as created_date,
+            group_concat(distinct db.ricos_id) as Borrowers,
+            group_concat(distinct s.name) as Statuses,
+            state.name as State,
+            ms.name as MarketSegment,
+            pl.name as ProductLine,
+            deal.debt_domain_id as DebtDomainId,
+            bool_and(cc.rpc_mandatory) as RPCMandatory,
+            f.booking_entity as BookingEntity,
+            group_concat(distinct ott.name order by ott.name) as OriginationTeams,
+            group_concat(distinct dtt.name order by dtt.name) as DistributionTeams,
+            dlud.last_modified_date as last_modified_date
+            from ldt.deals as deal
+            left join ldt.syndication_types as st on st.code = deal.syndicationtype_code
+            left join ldt.confidentiality_levels as cl on cl.code = deal.confidentialitylevel_code
+            left join ldt.market_segments as ms on ms.code = deal.marketsegment_code
+            left join ldt.product_lines as pl on pl.code = deal.productline_code
+            left join ldt.deals_statuses as ds on ds.deal_id = deal.id
+            left join ldt.statuses as s on s.code = ds.status_code
+            left join ldt.states as state on state.code = deal.state_code
+            left join ldt.deals_borrowers as db on db.deal_id = deal.id
+            left join ldt.credit_committees as cc on cc.deal_id = deal.id
+            left join ldt.finalizations as f on f.deal_id = deal.id
+            left join ldt.deals_origination_teams as ot on ot.deals_id = deal.id
+            left join ldt.deals_distribution_teams as dt on dt.deals_id = deal.id
+            left join ldt.teams as ott on ott.code = ot.originationteams_code and ott.team_type = 'ORIGINATION'
+            left join ldt.teams as dtt on dtt.code = dt.distributionteams_code and dtt.team_type = 'DISTRIBUTION'
+            left join ldt.deal_last_update_date as dlud on dlud.id = deal.id
+            group by deal.id, st.name, cl.name, f.booking_entity, state.name, ms.name, pl.name, dlud.last_modified_date]
+
+
