@@ -201,3 +201,60 @@ CREATE OR REPLACE VIEW LDT.homepage_view AS select deal.id as DealId,
             group by deal.id, st.name, cl.name, f.booking_entity, state.name, ms.name, pl.name, dlud.last_modified_date]
 
 
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import javax.sql.DataSource;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@Service
+public class DatabaseMetadataService {
+
+    private final DataSource dataSource;
+
+    @Autowired
+    public DatabaseMetadataService(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
+
+    public Map<String, List<String>> getAllTablesAndColumns() throws SQLException {
+        Map<String, List<String>> tablesAndColumns = new HashMap<>();
+
+        try (var connection = dataSource.getConnection()) {
+            DatabaseMetaData metaData = connection.getMetaData();
+
+            // Retrieve tables
+            ResultSet tablesResultSet = metaData.getTables(null, null, null, new String[]{"TABLE"});
+            while (tablesResultSet.next()) {
+                String tableName = tablesResultSet.getString("TABLE_NAME");
+                List<String> columns = getColumnsForTable(metaData, tableName);
+                tablesAndColumns.put(tableName, columns);
+            }
+        }
+
+        return tablesAndColumns;
+    }
+
+    private List<String> getColumnsForTable(DatabaseMetaData metaData, String tableName) throws SQLException {
+        List<String> columns = new ArrayList<>();
+        ResultSet columnsResultSet = metaData.getColumns(null, null, tableName, null);
+        
+        while (columnsResultSet.next()) {
+            String columnName = columnsResultSet.getString("COLUMN_NAME");
+            columns.add(columnName);
+        }
+        
+        return columns;
+    }
+}
+
+
+
+
