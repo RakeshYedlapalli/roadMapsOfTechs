@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+Ji<?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 	<springProfile name="!dev,!dev-cty,!int,!int-cty,!pre,!pre2,!prd,!stg,!uat2">
 		<include resource="org/springframework/boot/logging/logback/defaults.xml" />
@@ -255,6 +255,22 @@ public class DatabaseMetadataService {
     }
 }
 
+
+
+
+
+
+
+
+
+DO $$ 
+DECLARE 
+    table_name RECORD;
+BEGIN 
+    FOR table_name IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP
+        EXECUTE 'DROP TABLE ' || table_name.tablename || ' CASCADE'; 
+    END LOOP; 
+END $$;
 
 
 
