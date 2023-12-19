@@ -1,4 +1,4 @@
-Ji<?xml version="1.0" encoding="UTF-8"?>
+Hi Ji<?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 	<springProfile name="!dev,!dev-cty,!int,!int-cty,!pre,!pre2,!prd,!stg,!uat2">
 		<include resource="org/springframework/boot/logging/logback/defaults.xml" />
@@ -273,4 +273,14 @@ BEGIN
 END $$;
 
 
-
+CREATE OR REPLACE FUNCTION drop_all_tables_in_public_schema()
+RETURNS void AS $$
+DECLARE
+    table_name RECORD;
+BEGIN
+    FOR table_name IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP
+        EXECUTE 'DROP TABLE ' || table_name.tablename || ' CASCADE';
+    END LOOP;
+END;
+$$ LANGUAGE plpgsql;
+ 
