@@ -16,3 +16,8 @@ public Optional<Opportunity> fetch(Long id) {
     });
     return optionalDeal.map(opportunityDealMapper::toOpportunityDto);
   }
+
+
+
+
+java.lang.IllegalStateException: Illegal pop() with non-matching JdbcValuesSourceProcessingState
