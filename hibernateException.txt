@@ -1,0 +1,29 @@
+I have a below java method where I am using CompletableFuture to run the tasks asynchronously and I am using CompletableFuture.allOf method to combine all the tasks, The individual tasks are interacting with Databse to fetch the data, However,
+I am getting the  below exceptions, How to resolve this issue? This is happening after the migration of Hibernate to 6.x.x
+
+
+java.util.ConcurrentModificationException: null
+Caused by: org.postgresql.util.PSQLException: This statement has been closed.
+
+org.hibernate.exception.GenericJDBCException: JDBC exception executing SQL [select e1_0.id,e1_0.client_live_id,e1_0.created_date,f1_0.id,f1_0.created_date,f1_0.imei,f1_0.last_modified_date,f1_0.name,e1_0.last_modified_date,e1_0.name,p1_0.id,p1_0.client_live_id,p1_0.created_date,f2_0.id,f2_0.created_date,f2_0.imei,f2_0.last_modified_date,f2_0.name,p1_0.last_modified_date,p1_0.name,p1_0.parent_id,p1_0.ricos_id,p1_0.source,p1_0.status,p1_0.type,e1_0.ricos_id,e1_0.source,e1_0.status,e1_0.type from ldt.actors e1_0 left join ldt.debtdomain_firms f1_0 on f1_0.id=e1_0.firm_id left join ldt.actors p1_0 on p1_0.id=e1_0.parent_id left join ldt.debtdomain_firms f2_0 on f2_0.id=p1_0.firm_id where e1_0.id=?] [This statement has been closed.] [n/a]
+
+
+@Override
+  public Optional<Opportunity> fetch(Long id) {
+    var optionalDeal = dealService.fetchDeal(id);
+    optionalDeal.ifPresent(deal -> {
+      Collection<EDealActor> dealActors = dealActorService.findByDealId(id);
+      CompletableFuture<Void> commercialClientCF = CompletableFuture.runAsync(() -> dealActorService.setCommercialClients(deal, dealActors), threadPoolTaskExecutor);
+      CompletableFuture<Void> validationsCF = CompletableFuture.runAsync(() -> dealService.getAllValidations(deal), threadPoolTaskExecutor);
+      CompletableFuture<Void> counterpartiesCF = CompletableFuture.runAsync(() -> setCounterparties(deal, dealActors), threadPoolTaskExecutor);
+      CompletableFuture<Void> combinedCF = CompletableFuture.allOf(commercialClientCF, validationsCF, counterpartiesCF);
+      try {
+//        combinedCF.all
+        CompletableFuture.allOf(combinedCF);
+      } catch (Exception e) {
+        Thread.currentThread().interrupt();
+        throw new LdtTechnicalException(e);
+      }
+    });
+    return optionalDeal.map(opportunityDealMapper::toOpportunityDto);
+  }
