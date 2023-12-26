@@ -1,0 +1,18 @@
+I am setting your prompt as Java dexception resolver,
+
+I am using CompletableFuture from java 8 to run few of the tasks in async way, the tasks are dealing with database to fetch the data from db and it updates something, Below is my method and I am just returning without waiting for the tasks to complete and which is resulting to close the database statement and thrwing "Caused by: org.postgresql.util.PSQLException: This statement has been closed." exception, 
+How to wait until the task is done?
+
+public Optional<Opportunity> fetch(Long id) {
+    var optionalDeal = dealService.fetchDeal(id);
+    optionalDeal.ifPresent(deal -> {
+      Collection<EDealActor> dealActors = dealActorService.findByDealId(id);
+      CompletableFuture<Void> commercialClientCF = CompletableFuture.runAsync(() -> dealActorService.setCommercialClients(deal, dealActors), threadPoolTaskExecutor);
+      CompletableFuture<Void> validationsCF = CompletableFuture.runAsync(() -> dealService.getAllValidations(deal), threadPoolTaskExecutor);
+      CompletableFuture<Void> counterpartiesCF = CompletableFuture.runAsync(() -> setCounterparties(deal, dealActors), threadPoolTaskExecutor);
+      CompletableFuture.allOf(commercialClientCF, validationsCF, counterpartiesCF).join();
+
+
+    });
+    return optionalDeal.map(opportunityDealMapper::toOpportunityDto);
+  }
