@@ -17,3 +17,29 @@ public Mono<Optional<Opportunity>> fetchDummy(Long id) {
       }
     });
   }
+
+
+Refactored:
+
+
+public Optional<Opportunity> fetchDummy(Long id) {
+    return dealService.fetchDeal(id)
+            .flatMap(deal -> {
+                Collection<EDealActor> dealActors = dealActorService.findByDealId(id);
+
+                // Execute tasks concurrently using a dedicated thread pool
+                // to avoid blocking the reactive pipeline
+                Flux.merge(
+                        Mono.fromRunnable(() -> dealActorService.setCommercialClients(deal, dealActors))
+                                .subscribeOn(Schedulers.boundedElastic()),
+                        Mono.fromRunnable(() -> dealService.getAllValidations(deal))
+                                .subscribeOn(Schedulers.boundedElastic()),
+                        Mono.fromRunnable(() -> setCounterparties(deal, dealActors))
+                                .subscribeOn(Schedulers.boundedElastic())
+                )
+                        .blockLast(); // Wait for completion of concurrent tasks
+
+                return Optional.of(opportunityDealMapper.toOpportunityDto(deal));
+            })
+            .orElse(Optional.empty());
+}
