@@ -1,0 +1,13 @@
+public Mono<Opportunity> fetch(Long id) {
+    return dealService.fetchDeal(id)
+            .flatMap(deal -> {
+                Mono<Collection<EDealActor>> dealActorsMono = dealActorService.findByDealId(id);
+                Mono<Void> commercialClientsMono = dealActorsMono.flatMap(dealActors -> Mono.fromRunnable(() -> dealActorService.setCommercialClients(deal, dealActors)));
+                Mono<Void> validationsMono = Mono.fromRunnable(() -> dealService.getAllValidations(deal));
+                Mono<Void> counterpartiesMono = dealActorsMono.flatMap(dealActors -> Mono.fromRunnable(() -> setCounterparties(deal, dealActors)));
+
+                return Mono.when(commercialClientsMono, validationsMono, counterpartiesMono)
+                        .then(Mono.just(deal));
+            })
+            .map(opportunityDealMapper::toOpportunityDto);
+}
