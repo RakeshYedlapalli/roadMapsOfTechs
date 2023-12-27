@@ -1,0 +1,75 @@
+import com.cacib.loanscape.ldt.codes.CounterpartyType;
+import com.cacib.loanscape.ldt.codes.RoleCode;
+import com.cacib.loanscape.ldt.common.LDTUtils;
+import com.cacib.loanscape.ldt.dtos.Deal;
+import com.cacib.loanscape.ldt.dtos.DealStatus;
+import com.cacib.loanscape.ldt.dtos.actors.DealActorDto;
+import com.cacib.loanscape.ldt.dtos.actors.DealActorEntityDto;
+import com.cacib.loanscape.ldt.dtos.actors.DealActorRoleDto;
+import com.cacib.loanscape.ldt.dtos.dealteams.DealTeamParam;
+import com.cacib.loanscape.ldt.dtos.enums.SyndicationTypesEnum;
+import com.cacib.loanscape.ldt.dtos.opportunities.DealUpdateInput;
+import com.cacib.loanscape.ldt.dtos.opportunities.Opportunity;
+import com.cacib.loanscape.ldt.dtos.opportunities.OpportunitySummary;
+import com.cacib.loanscape.ldt.dtos.opportunities.wrapper.RequestOpportunityStatusWrapper;
+import com.cacib.loanscape.ldt.dtos.rpx.CommercialClient;
+import com.cacib.loanscape.ldt.dtos.rpx.Thirdparty;
+import com.cacib.loanscape.ldt.dtos.users.GroupDto;
+import com.cacib.loanscape.ldt.entities.actors.EDealActor;
+import com.cacib.loanscape.ldt.entities.enums.EStateEnum;
+import com.cacib.loanscape.ldt.errors.LdtTechnicalException;
+import com.cacib.loanscape.ldt.kafka.clientlive.mappers.WhoMapper;
+import com.cacib.loanscape.ldt.logs.LogAccessToken;
+import com.cacib.loanscape.ldt.mappers.DealMapper;
+import com.cacib.loanscape.ldt.mappers.opportunities.OpportunityDealMapper;
+import com.cacib.loanscape.ldt.repositories.IDealRepo;
+import com.cacib.loanscape.ldt.repositories.jpa.CustomAllowedDealsRepo;
+import com.cacib.loanscape.ldt.repositories.views.homepageview.searchspecifications.HomepageViewSearchDto;
+import com.cacib.loanscape.ldt.services.*;
+import com.cacib.loanscape.ldt.services.enums.DealStatuses;
+import com.cacib.loanscape.ldt.services.impl.tools.DealTeamTools;
+import com.cacib.loanscape.ldt.services.rpx.RpxServiceProvider;
+import com.cacib.loanscape.ldt.services.rpx.referential.ICommercialClientService;
+import com.cacib.loanscape.ldt.services.rpx.referential.ICounterpartyRpxService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
+
+import javax.validation.ConstraintViolationException;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+
+import static com.cacib.loanscape.ldt.common.LDTUtils.completeAllFutures;
+
+
+
+@Transactional(propagation = Propagation.REQUIRES_NEW)
+  @Override
+  public Optional<Opportunity> fetch(Long id) {
+    Optional<Deal> optionalDeal = dealService.fetchDeal(id);
+
+    optionalDeal.ifPresent(deal -> {
+      Collection<EDealActor> dealActors = dealActorService.findByDealId(id);
+      CompletableFuture<Void> commercialClientCF = CompletableFuture.runAsync(() -> dealActorService.setCommercialClients(deal, dealActors), threadPoolTaskExecutor);
+      CompletableFuture<Void> validationsCF = CompletableFuture.runAsync(() -> dealService.getAllValidations(deal), threadPoolTaskExecutor);
+      CompletableFuture<Void> counterpartiesCF = CompletableFuture.runAsync(() -> setCounterparties(deal, dealActors), threadPoolTaskExecutor);
+
+      try {
+        CompletableFuture.allOf(commercialClientCF, validationsCF, counterpartiesCF);
+      } catch (Exception e) {
+        Thread.currentThread().interrupt();
+        throw new LdtTechnicalException(e);
+      }
+    });
+    return optionalDeal.map(opportunityDealMapper::toOpportunityDto);
+  }
