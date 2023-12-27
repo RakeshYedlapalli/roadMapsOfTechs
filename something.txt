@@ -21,3 +21,5 @@ public Optional<Opportunity> fetch(Long id) {
 
 
 java.lang.IllegalStateException: Illegal pop() with non-matching JdbcValuesSourceProcessingState
+
+java.util.concurrent.CompletableFuture@1c8b9f25[Completed exceptionally: java.util.concurrent.CompletionException: java.lang.IllegalStateException: Illegal pop() with non-matching JdbcValuesSourceProcessingState]
