@@ -1,0 +1,22 @@
+ @Override
+  public Optional<Opportunity> fetch(Long id) {
+    Mono<Optional<Opportunity>> result =  Mono.defer(() -> {
+      Optional<Deal> optionalDeal = dealService.fetchDeal(id);
+
+      if (optionalDeal.isPresent()) {
+        Deal deal = optionalDeal.get();
+        Collection<EDealActor> dealActors = dealActorService.findByDealId(id);
+
+        Mono<Void> commercialClientMono = Mono.fromRunnable(() -> dealActorService.setCommercialClients(deal, dealActors));
+        Mono<Void> validationsMono = Mono.fromRunnable(() -> dealService.getAllValidations(deal));
+        Mono<Void> counterpartiesMono = Mono.fromRunnable(() -> setCounterparties(deal, dealActors));
+
+        return Mono.when(commercialClientMono, validationsMono, counterpartiesMono)
+            .thenReturn(optionalDeal.map(opportunityDealMapper::toOpportunityDto));
+      } else {
+        return Mono.just(optionalDeal.map(opportunityDealMapper::toOpportunityDto));
+      }
+    });
+
+    return result.block();
+  }
