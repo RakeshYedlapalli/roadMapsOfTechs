@@ -10,3 +10,7 @@
     </button>
   </ng-template>
 </mat-menu>
+
+Error: src/app/show-deals/show-deals.component.html:318:18 - error NG8003: No directive found with exportAs 'matMenu'.
+
+318 <mat-menu #menu="matMenu">
