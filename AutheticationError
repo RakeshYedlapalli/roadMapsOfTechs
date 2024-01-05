@@ -1,0 +1,8 @@
+[error] HttpErrorAuthUnknown: Unable to authenticate, need: BASIC realm="Sonatype Nexus Repository Manager"
+    at C:\Users\UT3JHA\AppData\Local\Temp\1\angular-cli-packages-i1rNPD\node_modules\npm-registry-fetch\lib\check-response.js:80:17
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async RegistryFetcher.packument (C:\Users\UT3JHA\AppData\Local\Temp\1\angular-cli-packages-i1rNPD\node_modules\pacote\lib\registry.js:87:19)
+    at async Promise.all (index 32)
+    at async C:\Users\UT3JHA\AppData\Local\Temp\1\angular-cli-packages-i1rNPD\node_modules\@angular\cli\src\commands\update\schematic\index.js:674:36
+    at async callRuleAsync (C:\Users\UT3JHA\AppData\Local\Temp\1\angular-cli-packages-i1rNPD\node_modules\@angular-devkit\schematics\src\rules\call.js:78:18)
+
