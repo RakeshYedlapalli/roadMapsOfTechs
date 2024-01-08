@@ -11,3 +11,8 @@
             </mat-form-field>
 
 keycloak-initializer.ts:19 ERROR Error: MatFormField: Invalid appearance "legacy", valid values are "fill" or "outline".
+
+
+
+
+keycloak-initializer.ts:19 ERROR Error: mat-form-field must contain a MatFormFieldControl.
