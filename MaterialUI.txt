@@ -1,0 +1,13 @@
+  <mat-form-field [appearance]="appearance">
+                <mat-select formControlName="businessLineCode"
+                            (valueChange)="clearDataOnChangeBusinessLine()">
+                    <mat-option></mat-option>
+                    <mat-option
+                            *ngFor="let bl of businessLineList | filterExcludeDisabled:opportunity?.businessLineCode:'code' | alphaNumericSort: 'name'"
+                            [value]="bl.code" [disabled]="bl.disable">
+                        {{bl.name}}
+                    </mat-option>
+                </mat-select>
+            </mat-form-field>
+
+keycloak-initializer.ts:19 ERROR Error: MatFormField: Invalid appearance "legacy", valid values are "fill" or "outline".
