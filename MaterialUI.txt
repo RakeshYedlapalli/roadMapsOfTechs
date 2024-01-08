@@ -16,3 +16,21 @@ keycloak-initializer.ts:19 ERROR Error: MatFormField: Invalid appearance "legacy
 
 
 keycloak-initializer.ts:19 ERROR Error: mat-form-field must contain a MatFormFieldControl.
+
+
+
+
+
+
+
+  <mat-form-field class="status">
+            <mat-label>Status</mat-label>
+            <mat-select formControlName="status"
+                        [disableControl]="(isStatusDisabled && !isAdmin) || !canEditDeal || deal === null"
+                        (valueChange)="updateStatus($event)">
+                <mat-option *ngFor="let s of statuses$ | async | filterStatuses: form.get('status').value"
+                            [value]="s.code">
+                    {{s.name}}
+                </mat-option>
+            </mat-select>
+        </mat-form-field>
