@@ -1,36 +1,23 @@
-  <mat-form-field [appearance]="appearance">
-                <mat-select formControlName="businessLineCode"
-                            (valueChange)="clearDataOnChangeBusinessLine()">
-                    <mat-option></mat-option>
-                    <mat-option
-                            *ngFor="let bl of businessLineList | filterExcludeDisabled:opportunity?.businessLineCode:'code' | alphaNumericSort: 'name'"
-                            [value]="bl.code" [disabled]="bl.disable">
-                        {{bl.name}}
-                    </mat-option>
-                </mat-select>
-            </mat-form-field>
-
-keycloak-initializer.ts:19 ERROR Error: MatFormField: Invalid appearance "legacy", valid values are "fill" or "outline".
-
-
-
-
-keycloak-initializer.ts:19 ERROR Error: mat-form-field must contain a MatFormFieldControl.
-
-
-
-
-
-
-
-  <mat-form-field class="status">
-            <mat-label>Status</mat-label>
-            <mat-select formControlName="status"
-                        [disableControl]="(isStatusDisabled && !isAdmin) || !canEditDeal || deal === null"
-                        (valueChange)="updateStatus($event)">
-                <mat-option *ngFor="let s of statuses$ | async | filterStatuses: form.get('status').value"
-                            [value]="s.code">
-                    {{s.name}}
-                </mat-option>
-            </mat-select>
-        </mat-form-field>
+			<mat-step label="Deal Summary">
+					<div class="content">
+					  <div class="row">
+						<div class="col-md-6">
+						 
+						  <mat-label class="global-pipeline-field-label before-bullet">File name</mat-label>
+						  <mat-form-field appearance="fill" class="mandatory_field">
+							<input matInput formControlName="fileName" type="text">
+						  </mat-form-field>
+						</div>
+						<div class="col-md-6">
+						  <mat-label>Syndication type</mat-label>
+						  <mat-form-field appearance="fill" class="mandatory_field">
+							<mat-select formControlName="syndicationType" panelClass="my-select-panel-class"
+							(valueChange)="checkSyndicationType($event)">
+							  <mat-option></mat-option>
+							  <mat-option *ngFor="let st of syndicationTypes$ | async" [value]="st.code">{{st.name}}</mat-option>
+							</mat-select>
+						  </mat-form-field>
+						</div>
+					  </div>
+			</div>
+			</mat-step>
