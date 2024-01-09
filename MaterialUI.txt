@@ -1,23 +1,31 @@
-			<mat-step label="Deal Summary">
-					<div class="content">
-					  <div class="row">
-						<div class="col-md-6">
-						 
-						  <mat-label class="global-pipeline-field-label before-bullet">File name</mat-label>
-						  <mat-form-field appearance="fill" class="mandatory_field">
-							<input matInput formControlName="fileName" type="text">
-						  </mat-form-field>
-						</div>
-						<div class="col-md-6">
-						  <mat-label>Syndication type</mat-label>
-						  <mat-form-field appearance="fill" class="mandatory_field">
-							<mat-select formControlName="syndicationType" panelClass="my-select-panel-class"
-							(valueChange)="checkSyndicationType($event)">
-							  <mat-option></mat-option>
-							  <mat-option *ngFor="let st of syndicationTypes$ | async" [value]="st.code">{{st.name}}</mat-option>
-							</mat-select>
-						  </mat-form-field>
-						</div>
-					  </div>
-			</div>
-			</mat-step>
+   <div class="row">
+            <div class="col-md-6">
+              <mat-label class="global-pipeline-field-label before-bullet">Client Sector(s)</mat-label>
+              <mat-form-field appearance="fill">
+                <mat-chip-listbox [disabled]="true">
+                  <mat-chip-option *ngFor="let sector of form.get('sector').value">
+                    {{sector}}
+                  </mat-chip-option>
+                </mat-chip-listbox>
+              </mat-form-field>
+            </div>
+            <div class="col-md-6">
+                <mat-label>Subsector</mat-label>
+                <mat-form-field appearance="fill">
+                    <input type="text" matInput formControlName="subsector" [matAutocomplete]="subsectorAuto">
+                    <mat-autocomplete #subsectorAuto="matAutocomplete" [panelWidth]="'700px'" [displayWith]="displayFnWithName">
+                        <mat-option class="mat-autocomplete-option"
+                            *ngFor="let ss of subsector$ | async | alphaNumericSort: 'name' | filterValuesIncluding:form.get('subsector').value:'name' | filterExcludeDisabled:form.get('subsector').value:'name'"
+                            [value]="ss.name" [disabled]="ss.disable">{{ss.name}}
+                        </mat-option>
+                    </mat-autocomplete>
+                    <mat-hint *ngIf="form.get('subsector').errors?.validationError">
+                        <span class="form-error">Invalid subsector</span>
+                    </mat-hint>
+                </mat-form-field>
+              </div>
+            </div> 
+			
+			I have a a above Angular JS code and I am getting below error 
+			core.mjs:8400 ERROR Error: mat-form-field must contain a MatFormFieldControl., this issue is happening
+			only with mat-chip-listbox tag, when I remove that, it works fine, what is the alternative I can use instead?
