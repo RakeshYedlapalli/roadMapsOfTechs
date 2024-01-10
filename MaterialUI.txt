@@ -1,21 +1,9 @@
-I have a below Angular JS Code and after migration to angular 15 and I am getting an error saying "ERROR TypeError: Cannot read properties of undefined (reading 'onContainerClick')
-    at MatFormField_Template_div_click_2_listener (form-field.mjs:26:99)
+I have a below Angular JS code in Angular 14 , can you help me to convert the below code Angular 15
 
-ERROR TypeError: Cannot read properties of undefined (reading 'focused')" 
-
-and the code is is below
-
-
-<div class="col-md-3">
-            <mat-label>Client Sector(s)</mat-label>
-            <mat-form-field [appearance]="appearance">
-                <mat-chip-grid #chipGrid>
-                    <mat-chip-row *ngFor="let sector of formGroup.get('sector').value">
-                      {{sector}}
-                    </mat-chip-row>
-                  </mat-chip-grid>
-                  <input [matChipInputFor]="chipGrid"/>
-            </mat-form-field>
-        </div>
-
-
+<mat-form-field [appearance]="appearance">
+						<mat-chip-listbox [disabled]="true">
+							<mat-chip-option *ngFor="let country of formGroup.get('pamCountry').value">
+								{{country}}
+							</mat-chip-option>
+						</mat-chip-listbox>
+		</mat-form-field>
