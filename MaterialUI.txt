@@ -48,3 +48,13 @@ I have a below Angular JS code in Angular 14 , can you help me to convert the be
   </mat-chip-listbox>
 </mat-form-field>
 
+
+
+
+  <button mat-icon-button (click)="openDealTeamModal()" [disabled]="!usersUpdated || deal === null" [ngClass]="isDealTeamInitialized ? 'deal-team-button' : 'deal-team-button-warning'" [disableRipple]="true">
+        <mat-icon *ngIf="canEditDealTeam">group_add</mat-icon>
+        <mat-icon *ngIf="!canEditDealTeam">group</mat-icon>
+    </button>
+
+<span class="mat-mdc-focus-indicator"></span>
+
