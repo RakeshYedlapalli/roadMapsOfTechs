@@ -7,3 +7,29 @@ I have a below Angular JS code in Angular 14 , can you help me to convert the be
 							</mat-chip-option>
 						</mat-chip-listbox>
 		</mat-form-field>
+
+
+
+
+
+
+<mat-form-field [appearance]="appearance">
+  <mat-chip-listbox [disabled]="true">
+    <mat-chip *ngFor="let country of formGroup.get('pamCountry').value">
+      {{ country }}
+      <mat-icon matChipRemove *ngIf="removable">cancel</mat-icon>
+    </mat-chip>
+    <input placeholder="Country" #countryInput [formControl]="countryCtrl" [matAutocomplete]="auto">
+
+    
+<mat-autocomplete #auto="matAutocomplete">
+
+      
+<mat-option *ngFor="let country of filteredCountries | async" [value]="country">
+        {{ country }}
+      </mat-option>
+
+    
+</mat-autocomplete>
+  </mat-chip-listbox>
+</mat-form-field>
