@@ -1,31 +1,21 @@
-   <div class="row">
-            <div class="col-md-6">
-              <mat-label class="global-pipeline-field-label before-bullet">Client Sector(s)</mat-label>
-              <mat-form-field appearance="fill">
-                <mat-chip-listbox [disabled]="true">
-                  <mat-chip-option *ngFor="let sector of form.get('sector').value">
-                    {{sector}}
-                  </mat-chip-option>
-                </mat-chip-listbox>
-              </mat-form-field>
-            </div>
-            <div class="col-md-6">
-                <mat-label>Subsector</mat-label>
-                <mat-form-field appearance="fill">
-                    <input type="text" matInput formControlName="subsector" [matAutocomplete]="subsectorAuto">
-                    <mat-autocomplete #subsectorAuto="matAutocomplete" [panelWidth]="'700px'" [displayWith]="displayFnWithName">
-                        <mat-option class="mat-autocomplete-option"
-                            *ngFor="let ss of subsector$ | async | alphaNumericSort: 'name' | filterValuesIncluding:form.get('subsector').value:'name' | filterExcludeDisabled:form.get('subsector').value:'name'"
-                            [value]="ss.name" [disabled]="ss.disable">{{ss.name}}
-                        </mat-option>
-                    </mat-autocomplete>
-                    <mat-hint *ngIf="form.get('subsector').errors?.validationError">
-                        <span class="form-error">Invalid subsector</span>
-                    </mat-hint>
-                </mat-form-field>
-              </div>
-            </div> 
-			
-			I have a a above Angular JS code and I am getting below error 
-			core.mjs:8400 ERROR Error: mat-form-field must contain a MatFormFieldControl., this issue is happening
-			only with mat-chip-listbox tag, when I remove that, it works fine, what is the alternative I can use instead?
+I have a below Angular JS Code and after migration to angular 15 and I am getting an error saying "ERROR TypeError: Cannot read properties of undefined (reading 'onContainerClick')
+    at MatFormField_Template_div_click_2_listener (form-field.mjs:26:99)
+
+ERROR TypeError: Cannot read properties of undefined (reading 'focused')" 
+
+and the code is is below
+
+
+<div class="col-md-3">
+            <mat-label>Client Sector(s)</mat-label>
+            <mat-form-field [appearance]="appearance">
+                <mat-chip-grid #chipGrid>
+                    <mat-chip-row *ngFor="let sector of formGroup.get('sector').value">
+                      {{sector}}
+                    </mat-chip-row>
+                  </mat-chip-grid>
+                  <input [matChipInputFor]="chipGrid"/>
+            </mat-form-field>
+        </div>
+
+
