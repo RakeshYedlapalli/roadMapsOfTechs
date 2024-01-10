@@ -33,3 +33,18 @@ I have a below Angular JS code in Angular 14 , can you help me to convert the be
 </mat-autocomplete>
   </mat-chip-listbox>
 </mat-form-field>
+
+
+
+
+
+
+
+<mat-form-field [appearance]="appearance">
+  <mat-chip-listbox [disabled]="true">
+    <mat-chip *ngFor="let country of formGroup.get('pamCountry').value">
+      {{ country }}
+    </mat-chip>
+  </mat-chip-listbox>
+</mat-form-field>
+
