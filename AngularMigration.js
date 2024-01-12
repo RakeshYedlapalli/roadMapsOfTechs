@@ -1,16 +1,24 @@
-<mat-menu #menu="matMenu">
-  <ng-template matMenuContent>
-    <button (click)="isOpportunityView ? openOpportunityInExistingTab(dealToOpenId) : openDealInExistingTab(dealToOpenId)" mat-menu-item>
-      <mat-icon>edit</mat-icon>
-      Open
-    </button>
-    <button (click)="isOpportunityView ? openOpportunityInNewTab(dealToOpenId)  : openDealInNewTab(dealToOpenId)" mat-menu-item>
-      <mat-icon>edit</mat-icon>
-      Open in new tab
-    </button>
-  </ng-template>
-</mat-menu>
 
-Error: src/app/show-deals/show-deals.component.html:318:18 - error NG8003: No directive found with exportAs 'matMenu'.
-
-318 <mat-menu #menu="matMenu">
+<mat-form-field class="example-chip-list">
+    <mat-label>Favorite Fruits</mat-label>
+    <mat-chip-grid #chipGrid aria-label="Enter fruits">
+      @for (fruit of fruits; track fruit) {
+        <mat-chip-row
+          (removed)="remove(fruit)"
+          [editable]="true"
+          (edited)="edit(fruit, $event)"
+          [aria-description]="'press enter to edit ' + fruit.name">
+          {{fruit.name}}
+          <button matChipRemove [attr.aria-label]="'remove ' + fruit.name">
+            <mat-icon>cancel</mat-icon>
+          </button>
+        </mat-chip-row>
+      }
+      <input placeholder="New fruit..."
+             [matChipInputFor]="chipGrid"
+             [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+             [matChipInputAddOnBlur]="addOnBlur"
+             (matChipInputTokenEnd)="add($event)"/>
+    </mat-chip-grid>
+  </mat-form-field>
+  
