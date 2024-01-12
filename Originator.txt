@@ -1,0 +1,365 @@
+I have similar mat-chip-grid in below, However it is working as expected, below I am providing the code for HTML and component code
+
+
+   <div class="row">
+        <div class="col-md-4">
+            <mat-icon class="icon">lightbulb</mat-icon>
+            <mat-label>Originator Name(s)</mat-label>
+            <mat-form-field [appearance]="appearance">
+                <mat-chip-grid #originatorChipLead aria-describedby="Originators" multiple="true" [disabled]="disabled" formControlName="originationTeamMemberLead">
+                  <mat-chip-row *ngFor="let originator of originationTeamMembers; let i = index" [selectable]="true"
+                            [removable]="true"
+                            (removed)="removeOriginationTeamMember(originator)"
+                            [ngClass]="{'thirdparty-lead': i === 0}">
+                      {{originator.firstName + ' ' + originator.lastName}}
+                      <mat-icon matChipRemove *ngIf="true">cancel</mat-icon>
+                  </mat-chip-row>
+                  <input matInput #originationNameInput [disabled]="disabled"
+                    [matAutocomplete]="originatorUsersAuto" [matChipInputFor]="originatorChipLead" [matChipInputAddOnBlur]="false">
+                </mat-chip-grid>
+                <mat-autocomplete #originatorUsersAuto="matAutocomplete"
+                  (optionSelected)="selectedOriginationTeamMember($event)">
+                  <mat-option *ngFor="let u of filteredUsers$ | async | filterUsersIncluding:originationNameInput.value | filterExcludeValues:originationTeamMembersUts:'ut' | alphaNumericSort: 'lastName'" class="mat-autocomplete-option" [value]="u">
+                    <small>{{u.lastName}} {{u.firstName}}</small>
+                  </mat-option>
+                </mat-autocomplete>
+            </mat-form-field>
+        </div>
+        <div class="col-md-4">
+            <mat-label>Originator Country</mat-label>
+            <mat-form-field [appearance]="appearance">
+                <input matInput [disabled]="true">
+                {{formGroup.get('originatorCountry').value?.isoCode2 | countryByIsoCode: 'ISO_CODE2'}}
+                <div *ngIf="originatorCountryInputLoading" class="spinner">
+                    <mat-spinner diameter="20"></mat-spinner>
+                </div>
+            </mat-form-field>
+        </div>
+        <div class="col-md-4">
+            <mat-label>Origination team</mat-label>
+            <mat-form-field [appearance]="appearance">
+                <mat-chip-grid #chipListOriginationTeam aria-describedby="Origination team" [disabled]="disabled">
+                    <mat-chip-row *ngFor="let team of displayedOriginationTeams" [selectable]="true"
+                              [removable]="true" (removed)="removeOriginationTeam(team)">
+                        {{team.display}}
+                        <mat-icon matChipRemove *ngIf="true">cancel</mat-icon>
+                    </mat-chip-row>
+                    <input #originationTeamsInput
+                           [matAutocomplete]="autoOriginationTeams"
+                           [matChipInputFor]="chipListOriginationTeam" [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+                           [matChipInputAddOnBlur]="false">
+                </mat-chip-grid>
+                <mat-autocomplete #autoOriginationTeams="matAutocomplete" (optionSelected)="selectedOriginationTeam($event)">
+                    <mat-option class="mat-autocomplete-option"
+                                *ngFor="let team of originationTeams$ | async | filterExclude:displayedOriginationTeams:'code'"
+                                [value]="team.code">
+                        {{team.name}}
+                    </mat-option>
+                </mat-autocomplete>
+            </mat-form-field>
+        </div>
+    </div>
+
+Component Code:
+======================
+
+import {Component, ElementRef, Input, OnInit, ViewChild} from '@angular/core';
+import {UntypedFormGroup} from '@angular/forms';
+import {
+    BusinessLine,
+    Country,
+    DistributionTeam,
+    Opportunity,
+    OriginationTeam,
+    Person,
+    ProductLine,
+    User,
+    UserDeal
+} from '../../../../api/apiclient';
+import {ReferentialService} from '@ldt/services/referential.service';
+import {GenericComponent} from '@ldt/common/generic.component';
+import {Observable} from 'rxjs';
+import {UserService} from '@ldt/administration/services/user.service';
+import {MatAutocomplete, MatAutocompleteSelectedEvent} from '@angular/material/autocomplete';
+import {EmployeeService} from '@ldt/services/employee.service';
+import _ from 'lodash';
+import { COMMA, ENTER } from '@angular/cdk/keycodes';
+import {SnackBarService} from '@ldt/services/snack-bar-service';
+import {debounceTime} from 'rxjs/operators';
+
+@Component({
+    selector: 'app-teams-regions-section',
+    templateUrl: './teams-regions-section.component.html',
+    styleUrls: ['./teams-regions-section.component.scss']
+})
+export class TeamsRegionsSectionComponent extends GenericComponent implements OnInit {
+    @Input() formGroup: UntypedFormGroup;
+    @Input() opportunity: Opportunity;
+    isBookingEntityError = false;
+    originatorCountryInputLoading = false;
+    businessLineList: BusinessLine[] = [];
+    productLineList: ProductLine[] = [];
+    bookingEntityList: string[] = [];
+    countryList: Country[] = [];
+    public displayedOriginationTeams = [];
+    public displayedDistributionTeams = [];
+    public filteredUsers$: Observable<UserDeal[]>;
+    public originationTeams$: Observable<OriginationTeam[]>;
+    public originationTeamsAll$: Observable<OriginationTeam[]>;
+    public distributionTeams$: Observable<DistributionTeam[]>;
+    public distributionTeamsAll$: Observable<DistributionTeam[]>;
+    public originationTeamMemberLead: User = null;
+    public originationTeamMembers: User[] = [];
+    public distributionTeamMembers: User[] = [];
+
+    separatorKeysCodes: number[] = [ENTER, COMMA];
+
+    @ViewChild('originationNameInput', { static: true }) originationNameInput: ElementRef<HTMLInputElement>;
+    @ViewChild('distributionNameInput', { static: true }) distributionNameInput: ElementRef<HTMLInputElement>;
+    @ViewChild('bookingEntitiesInput', { static: true }) bookingEntitiesInput: ElementRef<HTMLInputElement>;
+    @ViewChild('originationTeamsInput', {static: true}) originationTeamsInput: ElementRef<HTMLInputElement>;
+    @ViewChild('distributionTeamsInput', {static: true}) distributionTeamsInput: ElementRef<HTMLInputElement>;
+
+    constructor(private referentialService: ReferentialService,
+                private userService: UserService,
+                private employeeService: EmployeeService,
+                private snackBarService: SnackBarService) {
+        super();
+        this.filteredUsers$ = this.userService.filteredUsersLite$;
+        this.formQuerySelectors = 'input, textarea, select, mat-select, mat-chip-list';
+    }
+
+    ngOnInit(): void {
+        this.userService.loadUsersLite(this.opportunity?.id);
+        this.addSubscription(this.referentialService.businessLines$.subscribe(list => this.businessLineList = list));
+        this.addSubscription(this.referentialService.productLines$.subscribe(list => this.productLineList = list));
+        this.addSubscription(this.referentialService.countries$.subscribe(list => this.countryList = list));
+        this.addSubscription(this.referentialService.bookingEntities$.subscribe(list => this.bookingEntityList = list));
+        this.originationTeams$ = this.referentialService.originationTeamsEnabled$;
+        this.originationTeamsAll$ = this.referentialService.originationTeams$;
+        this.distributionTeams$ = this.referentialService.distributionTeamsEnabled$;
+        this.distributionTeamsAll$ = this.referentialService.distributionTeams$;
+        this.addSubscription(this.userService.usersLite$.subscribe(list => {
+            if (list?.length > 0) {
+                this.originationTeamMembers = [];
+                this.distributionTeamMembers = [];
+                let origTeamLead = this.opportunity?.originationTeamMemberLead;
+                if (origTeamLead ){
+                    this.findUserAndPushToList(list, this.originationTeamMembers, origTeamLead);
+                    this.opportunity?.originationTeamMemberBackUp?.forEach(member => {
+                        this.findUserAndPushToList(list, this.originationTeamMembers, member);
+                    });
+                }
+                let distriLead = this.opportunity?.distributionTeamMemberLead;
+                if (distriLead) {
+                    this.findUserAndPushToList(list, this.distributionTeamMembers, distriLead);
+                    this.opportunity?.distributionTeamMemberBackUp?.forEach(member => {
+                        this.findUserAndPushToList(list, this.distributionTeamMembers, member);
+                    });
+                }
+            }
+        }));
+        this.addSubscription(this.originationTeamsAll$
+            .pipe(debounceTime(200))
+            .subscribe((originationTeamsRef: OriginationTeam[]) => {
+                if (this.opportunity) {
+                    const teams = this.opportunity.originationTeams;
+                    if (teams && teams.length > 0) {
+                        this.displayedOriginationTeams = teams.map(code => {
+                            const team = originationTeamsRef.find(r => code === r.code);
+                            return {display: team.name, code: team.code};
+                        });
+                    } else {
+                        this.displayedOriginationTeams = [];
+                    }
+                }
+            }));
+
+        this.addSubscription((this.distributionTeamsAll$
+            .pipe(debounceTime(200))
+            .subscribe((distributionTeamsRef: DistributionTeam[]) => {
+                if (this.opportunity) {
+                    const teams = this.opportunity.distributionTeams;
+                    if (teams && teams.length > 0) {
+                        this.displayedDistributionTeams = teams.map(code => {
+                            const team = distributionTeamsRef.find(r => code === r.code);
+                            return {display: team.name, code: team.code};
+                        });
+                    } else {
+                        this.displayedDistributionTeams = [];
+                    }
+                }
+            })));
+    }
+
+    get disabled() {
+        return this.formGroup.disabled;
+    }
+
+    clearDataOnChangeBusinessLine(): void {
+        this.formGroup.get('productLineCode').setValue(null);
+    }
+
+    setBusinessLineByProductLine(code: string): void {
+        const bl = this.referentialService.getBusinessLineFromProductLine(code);
+        if (bl && this.formGroup.get('businessLineCode').value !== bl.code) {
+            this.formGroup.get('businessLineCode').setValue(bl.code);
+        }
+    }
+
+    get businessLineValue() {
+        return this.formGroup.controls.businessLineCode.value;
+    }
+
+    checkBookingEntity(bookingEntity: string) {
+        this.isBookingEntityError = !this.isBookingEntityOk(bookingEntity);
+    }
+
+    get appearance() {
+        return this.formGroup.disabled ? 'outline' : 'fill';
+    }
+
+    get originationTeamMembersUts() {
+        return this.originationTeamMembers.map(user => user.ut);
+    }
+
+    get distributionTeamMembersUts() {
+        return this.distributionTeamMembers.map(user => user.ut);
+    }
+
+    public selectedOriginationTeamMember(event: MatAutocompleteSelectedEvent): void {
+        const isLead = this.originationTeamMembers?.length === 0;
+        const selectedUser = event.option.value;
+        this.originationTeamMembers.push(selectedUser);
+        if (isLead) {
+            this.formGroup.get('originationTeamMemberLead').setValue(selectedUser.ut);
+            this.updateOriginatorCountry(selectedUser.ut);
+        } else {
+            this.formGroup.get('originationTeamMemberBackUp').setValue(_.concat((this.formGroup.get('originationTeamMemberBackUp').value || []), selectedUser.ut));
+        }
+        this.originationNameInput.nativeElement.value = '';
+    }
+
+    public removeOriginationTeamMember(member: User): void {
+        const index = this.originationTeamMembers.indexOf(member);
+        const backupMembers = this.formGroup.get('originationTeamMemberBackUp').value;
+        if (index === 0) {
+            if (backupMembers?.length > 0) {
+                const firstBackup = backupMembers[0];
+                this.formGroup.get('originationTeamMemberLead').setValue(firstBackup);
+                this.formGroup.get('originatorCountry').setValue(null);
+                this.updateOriginatorCountry(firstBackup);
+                backupMembers?.splice(0, 1);
+
+            } else {
+                this.formGroup.get('originationTeamMemberLead').setValue(null);
+                this.formGroup.get('originatorCountry').setValue(null);
+            }
+        } else {
+            backupMembers?.splice(backupMembers.indexOf(member.ut), 1);
+        }
+        this.originationTeamMembers.splice(index, 1);
+    }
+
+    public selectedDistributionTeamMember(event: MatAutocompleteSelectedEvent): void {
+        const isLead = this.distributionTeamMembers?.length === 0;
+        const selectedUser = event.option.value;
+        this.distributionTeamMembers.push(selectedUser);
+        if (isLead) {
+            this.formGroup.get('distributionTeamMemberLead').setValue(selectedUser.ut);
+        } else {
+            this.formGroup.get('distributionTeamMemberBackUp').setValue(_.concat((this.formGroup.get('distributionTeamMemberBackUp').value || []), selectedUser.ut));
+        }
+        this.distributionNameInput.nativeElement.value = '';
+    }
+
+    public removeDistributionTeamMember(member: User): void {
+        const index = this.distributionTeamMembers.indexOf(member);
+        const backupMembers = this.formGroup.get('distributionTeamMemberBackUp').value;
+        if (index === 0) {
+            if (backupMembers?.length > 0) {
+                const firstBackup = backupMembers[0];
+                this.formGroup.get('distributionTeamMemberLead').setValue(firstBackup);
+                this.updateOriginatorCountry(firstBackup);
+                backupMembers?.splice(0, 1);
+            } else {
+                this.formGroup.get('distributionTeamMemberLead').setValue(null);
+            }
+        } else {
+            backupMembers?.splice(backupMembers.indexOf(member.ut), 1);
+        }
+        this.distributionTeamMembers.splice(index, 1);
+    }
+
+    public removeBookingEntity(value): void {
+        const bookingEntities = this.formGroup.get('bookingEntities').value;
+        this.formGroup.get('bookingEntities').setValue(_.without(bookingEntities, value));
+    }
+
+    public selectedBookingEntities(event: MatAutocompleteSelectedEvent): void {
+        const bookingEntities = _.concat((this.formGroup.get('bookingEntities').value || []), event.option.value);
+        this.formGroup.get('bookingEntities').setValue(bookingEntities);
+        this.bookingEntitiesInput.nativeElement.value = '';
+        this.checkBookingEntity('');
+    }
+
+    public removeOriginationTeam(value): void {
+        const originationTeams = this.formGroup.get('originationTeams').value;
+        originationTeams.splice(originationTeams.indexOf(value.code), 1);
+        this.displayedOriginationTeams.splice(this.displayedOriginationTeams.indexOf(value), 1);
+    }
+
+    public selectedOriginationTeam(event: MatAutocompleteSelectedEvent): void {
+        this.displayedOriginationTeams.push({display: event.option.viewValue, code: event.option.value});
+        const originationTeams = this.formGroup.get('originationTeams').value ? this.formGroup.get('originationTeams').value : [];
+        originationTeams.push(event.option.value);
+        this.formGroup.get('originationTeams').setValue(originationTeams);
+        this.originationTeamsInput.nativeElement.value = '';
+    }
+
+    public removeDistributionTeam(value): void {
+        const distributionTeams = this.formGroup.get('distributionTeams').value;
+        distributionTeams.splice(distributionTeams.indexOf(value.code), 1);
+        this.displayedDistributionTeams.splice(this.displayedDistributionTeams.indexOf(value), 1);
+    }
+
+
+    public selectedDistributionTeam(event: MatAutocompleteSelectedEvent): void {
+        this.displayedDistributionTeams.push({display: event.option.viewValue, code: event.option.value});
+        const distributionTeams = this.formGroup.get('distributionTeams').value ? this.formGroup.get('distributionTeams').value : [];
+        distributionTeams.push(event.option.value);
+        this.formGroup.get('distributionTeams').setValue(distributionTeams);
+        this.distributionTeamsInput.nativeElement.value = '';
+    }
+
+    private isBookingEntityOk(bookingEntity: string): boolean {
+        if (bookingEntity && bookingEntity.length > 0) {
+            return this.bookingEntityList.indexOf(bookingEntity) >= 0;
+        }
+        return true;
+    }
+
+    private findUserAndPushToList(usersList: UserDeal[], targetList: UserDeal[], ut: string) {
+        const user = usersList.find(u => u.ut.toLowerCase().includes(ut.toLowerCase()));
+        if (user) {
+            targetList.push(user);
+        }
+    }
+
+    private updateOriginatorCountry(ut: string) {
+        this.originatorCountryInputLoading = true;
+        this.employeeService.findEmployeeByUt(ut)
+            .subscribe((person: Person) => {
+                this.originatorCountryInputLoading = false;
+                if (person && person.positions.length > 0) {
+                    this.formGroup.get('originatorCountry').setValue(person.positions[0].address.country);
+                }
+            }, (error) => {
+                this.originatorCountryInputLoading = false;
+                if (error.status !== 204) {
+                    this.snackBarService.error('Error when retrieving the originator country.');
+                }
+            });
+    }
+
+}
