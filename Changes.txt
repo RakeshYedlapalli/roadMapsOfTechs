@@ -62,3 +62,11 @@
         </div>
     </div>
 </div>
+
+
+
+
+:host ::ng-deep .mat-tab-label:last-child {
+    opacity: .6;
+    margin-left: inherit;
+}
