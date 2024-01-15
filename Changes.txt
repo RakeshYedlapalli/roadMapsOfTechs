@@ -26,3 +26,39 @@
             </div>
         </div>
     </div>
+
+
+
+
+
+
+
+
+<div class="aggregate-info">
+    <div class="row no-gutters">
+        <div class="col-md-5">
+            <mat-card appearance="outlined" class="mat-elevation-z2">
+                <div class="row d-flex align-items-center">
+                    <div class="col-md-6">
+                        <mat-label>Tranche total amount</mat-label>
+                    </div>
+                    <div class="col-md-6 text-display">
+                        {{trancheTotalAmount}} {{quoteCurrencyCodeIso}}
+                    </div>
+                </div>
+            </mat-card>
+        </div>
+        <div class="col-md-5">
+            <mat-card appearance="outlined" class="mat-elevation-z2">
+                <div class="row d-flex align-items-center">
+                    <div class="col-md-6">
+                        <mat-label>% of deal amount</mat-label>
+                    </div>
+                    <div class="col-md-6 text-display">
+                        {{percentageOfDeal}}%
+                    </div>
+                </div>
+            </mat-card>
+        </div>
+    </div>
+</div>
