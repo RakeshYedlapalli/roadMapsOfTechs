@@ -1,44 +1,31 @@
- <div class="col-md-3">
-            <mat-icon class="icon">lightbulb</mat-icon>
-            <mat-label>Client Name(s)</mat-label>
-            <mat-form-field #formfieldClientNames [appearance]="appearance">
-                <mat-label>Client Name(sss)</mat-label>
-                <mat-chip-grid #chipListClientNames aria-describedby="Client Name(s)" formControlName="clientName"
-                               cdkDropList
-                               [ngClass]="{'mat-chip-list-wrapper-vertical': (dragAndDropService.getOrientation(COMPONENT_NAME,'clientName') | async) === 'vertical' && formGroup.enabled}"
-                               [cdkDropListOrientation]="dragAndDropService.getOrientation(COMPONENT_NAME,'clientName') | async"
-                               (cdkDropListDropped)="dropClientNames($event)"
-                >
-                    <mat-chip-row style="cursor: pointer"
-                              cdkDrag
-                              [cdkDragDisabled]="formGroup.get('clientName').disabled"
-                              *ngFor="let client of formGroup.get('clientName').value; let i = index"
-                              (click)="redirectToClientLiveClientUrl(client.clientLiveReference)"
-                              [selectable]="true"
-                              [removable]="true"
-                              (removed)="removeClientName(client)"
-                              [ngClass]="{'thirdparty-lead': i === 0}">
-                        {{client.clientLiveReference}} - {{client.name}}
-                        <mat-icon matChipRemove>cancel</mat-icon>
-                    </mat-chip-row>
-                    <input matInput #clientNamesInput formControlName="clientNameInput"
-                           [matAutocomplete]="clientNamesAuto"
-                           [matChipInputFor]="chipListClientNames" [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
-                           [matChipInputAddOnBlur]="false" (blur)="checkClientName($event.target.value)">
-                    <div *ngIf="clientNamesInputLoading" class="spinner">
-                        <mat-spinner diameter="20"></mat-spinner>
-                    </div>
-                </mat-chip-grid>
-                <mat-icon *ngIf="formGroup.enabled" matSuffix>search</mat-icon>
-                <mat-autocomplete #clientNamesAuto="matAutocomplete" (optionSelected)="selectedClientName($event)" [panelWidth]="'auto'">
-                    <mat-option class="mat-autocomplete-option"
-                                *ngFor="let client of commercialClients | filterExclude:formGroup.get('clientName').value:'clientLiveReference'"
-                                [value]="client">
-                        <small>{{client.clientLiveReference}} - {{client.name}}</small>
-                    </mat-option>
-                </mat-autocomplete>
-                <mat-hint *ngIf="isClientNameError">
-                    <span class="form-error">Invalid client name</span>
-                </mat-hint>
-            </mat-form-field>
-        </div>
+I have a below Angular JS code in Componenet.js file, where I have a mat-tab-group having 3 labels "General", "Tranches" and "Open in ClientLive", so recently I have migrated to Angular 15 from Angular 14, Before migration of Angular 
+ 14, The <mat-tab label="GENERAL"> and <mat-tab label="TRANCHES"> were lefet aligned and <mat-tab label="Open in ClientLive"> is right aligned , However, after migration to Angular 15, they all aligned equally, like one after another 
+  with equal  padding, But I want to align the <mat-tab label="Open in ClientLive"> right and (<mat-tab label="GENERAL"> and <mat-tab label="TRANCHES">) are to be left, how to adjust my eithe CSS of HTML Code changes
+
+<mat-tab-group class="opportunity-view-tabs">
+                <mat-tab label="GENERAL">
+                    <app-general-tab-opportunity (sentToClientLiveChange)="onSentToClientLiveChange()" [isAddMode]="isAddMode" [opportunity]="opportunity" (opportunityChange)="onOpportunityChange($event)" #generalTabOpportunity></app-general-tab-opportunity>
+                </mat-tab>
+                <mat-tab label="TRANCHES">
+                    <app-tranche-tab></app-tranche-tab>
+                </mat-tab>
+                <mat-tab disabled>
+                    <ng-template mat-tab-label>
+                            <a [href]="clientLiveOpportunityUrl" mat-raised-button color="accent" target="_blank"
+                               rel="noreferrer"
+                               [disabled]="!opportunity?.sentToClientLive">Open in ClientLive
+                                <mat-icon>open_in_new</mat-icon>
+                            </a>
+                    </ng-template>
+                </mat-tab>
+            </mat-tab-group>
+
+and CSS Styles:
+
+
+::ng-deep .opportunity-view-tabs .mat-mdc-tab-label:last-child {
+  opacity: 1;
+  min-width: 20px;
+  margin-left: auto;
+  padding-right: 16px;
+}
