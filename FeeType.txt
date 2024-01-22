@@ -1,0 +1,84 @@
+I am facing an issue in my java program after I changed the class type to Generics , so before migration
+ so I have a class without any Generics like below
+ 
+ 
+
+
+
+import com.cacib.loanscape.gateway.Generated;
+import com.netflix.graphql.dgs.client.codegen.BaseProjectionNode;
+ 
+@Generated
+public class AllFeeTypesProjectionRoot extends BaseProjectionNode {
+  public AllFeeTypesProjectionRoot() {
+  }
+
+
+public AllFeeTypesProjectionRoot code() {
+    this.getFields().put("code", (Object)null);
+    return this;
+  }
+
+  public AllFeeTypesProjectionRoot label() {
+    this.getFields().put("label", (Object)null);
+    return this;
+  }
+
+}
+
+and then after migration to new version, they have changed the below class as below
+
+@Generated
+public class AllFeeTypesProjectionRoot<PARENT extends BaseSubProjectionNode<?, ?>, ROOT extends BaseSubProjectionNode<?, ?>> extends BaseSubProjectionNode<PARENT, ROOT> {
+  public AllFeeTypesProjectionRoot() {
+    super((Object)null, (Object)null, Optional.of("FeeType"));
+  }
+  
+  
+  public AllFeeTypesProjectionRoot<PARENT, ROOT> code() {
+    this.getFields().put("code", (Object)null);
+    return this;
+  }
+
+  public AllFeeTypesProjectionRoot<PARENT, ROOT> label() {
+    this.getFields().put("label", (Object)null);
+    return this;
+  }
+  
+}
+
+and I have another class which remains unchanged even after migration which is below  one
+
+
+package com.netflix.graphql.dgs.client.codegen
+
+public abstract class BaseSubProjectionNode<T, R> public constructor(parent: T, root: R, schemaType: java.util.Optional<kotlin.String> = COMPILED_CODE) : com.netflix.graphql.dgs.client.codegen.BaseProjectionNode {
+    public constructor(parent: T, root: R) { /* compiled code */ }
+
+    public final val parent: T /* compiled code */
+
+    public final val root: R /* compiled code */
+
+    public final fun parent(): T { /* compiled code */ }
+
+    public final fun root(): R { /* compiled code */ }
+}
+  
+  
+
+
+so my question is , before migration, I was accessing the methods like below
+
+ AllFeeTypesGraphQLQuery query = AllFeeTypesGraphQLQuery.newRequest().build();
+    AllFeeTypesProjectionRoot projection = new AllFeeTypesProjectionRoot().code().label()
+        .levels().getRoot();
+		
+		
+	
+But after migration, I am getting error like 
+
+Required type:
+AllFeeTypesProjectionRoot
+Provided:
+Object
+Cast expression to AllFeeTypesProjectionRoot , how can I access it now?
