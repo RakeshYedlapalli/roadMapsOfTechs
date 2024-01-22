@@ -1,84 +1,40 @@
-I am facing an issue in my java program after I changed the class type to Generics , so before migration
- so I have a class without any Generics like below
- 
- 
+
+I have a below interface in my spring boot application which I am autowiring in DealStructureService class which I have given below, 
+I am gettting error saying DealHandlerClient bean can't be created please consider creation a bean in  DealStructureService, why is it giving error? despite of @Service internally AUtowires the DealHandlerClient object?
 
 
 
-import com.cacib.loanscape.gateway.Generated;
-import com.netflix.graphql.dgs.client.codegen.BaseProjectionNode;
- 
-@Generated
-public class AllFeeTypesProjectionRoot extends BaseProjectionNode {
-  public AllFeeTypesProjectionRoot() {
-  }
+import com.cacib.loanscape.types.DealInput;
+import com.cacib.loanscape.types.DealStatusInput;
+import com.cacib.loanscape.types.report.Response;
+import feign.Headers;
+import feign.Param;
+import feign.RequestLine;
+import jakarta.validation.Valid;
 
+@Headers({"Content-Type: application/vnd.od.api.v1+json;charset=UTF-8"})
+public interface DealHandlerClient {
+  @RequestLine("POST /api/v1/deals")
+  @Headers({"Authorization: {authHeader}", "X-Correlation-Id: {correlationId}"})
+  Response createDeal(@Param("authHeader") String authHeader, @Param("correlationId") String correlationId, @Valid DealInput input);
 
-public AllFeeTypesProjectionRoot code() {
-    this.getFields().put("code", (Object)null);
-    return this;
-  }
+  @RequestLine("PUT /api/v1/deals/{functionalId}/{functionalVersion}")
+  @Headers({"Authorization: {authHeader}", "X-Correlation-Id: {correlationId}"})
+  Response updateDeal(@Param("authHeader") String authHeader, @Param("correlationId") String correlationId, @Param("functionalId") String functionalId, @Param("functionalVersion") int functionalVersion, @Valid DealInput input);
 
-  public AllFeeTypesProjectionRoot label() {
-    this.getFields().put("label", (Object)null);
-    return this;
-  }
-
+  @RequestLine("PUT /api/v1/deals/{functionalId}/{functionalVersion}/updatestatus")
+  @Headers({"Authorization: {authHeader}", "X-Correlation-Id: {correlationId}"})
+  Response updateDealStatus(@Param("authHeader") String authHeader, @Param("correlationId") String correlationId, @Param("functionalId") String functionalId, @Param("functionalVersion") int functionalVersion, @Valid DealStatusInput input);
 }
 
-and then after migration to new version, they have changed the below class as below
 
-@Generated
-public class AllFeeTypesProjectionRoot<PARENT extends BaseSubProjectionNode<?, ?>, ROOT extends BaseSubProjectionNode<?, ?>> extends BaseSubProjectionNode<PARENT, ROOT> {
-  public AllFeeTypesProjectionRoot() {
-    super((Object)null, (Object)null, Optional.of("FeeType"));
-  }
+@Service
+@RequiredArgsConstructor
+@ConditionalOnProperty(name = "od.handler.enabled", havingValue = "true")
+@Slf4j
+public class DealStructureService implements IDealStructureService {
+  private final DealHandlerClient dealHandlerClient;
   
-  
-  public AllFeeTypesProjectionRoot<PARENT, ROOT> code() {
-    this.getFields().put("code", (Object)null);
-    return this;
-  }
-
-  public AllFeeTypesProjectionRoot<PARENT, ROOT> label() {
-    this.getFields().put("label", (Object)null);
-    return this;
-  }
-  
-}
-
-and I have another class which remains unchanged even after migration which is below  one
+ }
 
 
-package com.netflix.graphql.dgs.client.codegen
-
-public abstract class BaseSubProjectionNode<T, R> public constructor(parent: T, root: R, schemaType: java.util.Optional<kotlin.String> = COMPILED_CODE) : com.netflix.graphql.dgs.client.codegen.BaseProjectionNode {
-    public constructor(parent: T, root: R) { /* compiled code */ }
-
-    public final val parent: T /* compiled code */
-
-    public final val root: R /* compiled code */
-
-    public final fun parent(): T { /* compiled code */ }
-
-    public final fun root(): R { /* compiled code */ }
-}
-  
-  
-
-
-so my question is , before migration, I was accessing the methods like below
-
- AllFeeTypesGraphQLQuery query = AllFeeTypesGraphQLQuery.newRequest().build();
-    AllFeeTypesProjectionRoot projection = new AllFeeTypesProjectionRoot().code().label()
-        .levels().getRoot();
-		
-		
-	
-But after migration, I am getting error like 
-
-Required type:
-AllFeeTypesProjectionRoot
-Provided:
-Object
-Cast expression to AllFeeTypesProjectionRoot , how can I access it now?
