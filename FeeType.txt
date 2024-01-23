@@ -1,4 +1,16 @@
-I am getting below error when hit the swagger documenation api which is -> /v3/api-docs/, how to find the cause of this issue?
+I have a below LIquibase changeset log in my java spring boot application, as shown in the below changeset, I have a column in database called "value" which is a reserved key work in the database
+so I am using double quotes to let the liquibase know, However, after the migration so when I run the application, getting error "value" is reserved keyword, can I modify the changeset to use in differetn way to update or can I use it in any other way to fix the error?
 
-"class jdk.proxy2.$Proxy323 cannot be cast to class jakarta.validation.constraints.Pattern (jdk.proxy2.$Proxy323 is in module jdk.proxy2 of loader 'app'; jakarta.validation.constraints.Pattern is in unnamed module of loader 'app')",
-    "cause": "java.lang.ClassCastException: class jdk.proxy2.$Proxy323 cannot be cast to class jakarta.validation.constraints.Pattern (jdk.proxy2.$Proxy323 is in module jdk.proxy2 of loader 'app'; jakarta.validation.constraints.Pattern is in unnamed module of loader 'app'
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.6.xsd">
+
+  <changeSet id="016-migrate_other_values_conditions_table" author="ut3f26">
+    <sql>
+      update ldt.conditions
+      set value_code=conditions."value"
+      where field_code not in ('BUSINESS_LINE', 'PRODUCT_LINE','DISTRIBUTION_SEGMENT');
+    </sql>
+  </changeSet>
+</databaseChangeLog>
