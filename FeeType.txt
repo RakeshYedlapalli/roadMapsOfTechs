@@ -14,3 +14,15 @@ so I am using double quotes to let the liquibase know, However, after the migrat
     </sql>
   </changeSet>
 </databaseChangeLog>
+
+
+
+
+
+
+<changeSet id="016-migrate_other_values_conditions_table" author="ut3f26">
+  <update tableName="ldt.conditions">
+    <column name="value_code">conditions.value</column>
+    <where>field_code not in ('BUSINESS_LINE', 'PRODUCT_LINE', 'DISTRIBUTION_SEGMENT')</where>
+  </update>
+</changeSet>
