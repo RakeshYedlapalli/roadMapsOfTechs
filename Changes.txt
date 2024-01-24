@@ -1,72 +1,101 @@
- <div class="aggregate-info">
-        <div class="row no-gutters">
-            <div class="col-md-5">
-                <mat-card appearance="outlined" class="mat-elevation-z2">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <mat-label>Tranche total amount</mat-label>
-                        </div>
-                        <div class="col-md-6 text-display">
-                            {{trancheTotalAmount}} {{quoteCurrencyCodeIso}}
-                        </div>
-                    </div>
-                </mat-card>
-            </div>
-            <div class="col-md-5">
-                <mat-card appearance="outlined" class="mat-elevation-z2">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <mat-label>% of deal amount</mat-label>
-                        </div>
-                        <div class="col-md-6 text-display">
-                            {{percentageOfDeal}}%
-                        </div>
-                    </div>
-                </mat-card>
-            </div>
-        </div>
-    </div>
+CompletableFuture<SendResult<String, SpecificRecordBase>> completableFuture
 
+specificRecordBaseKafkaTemplate.send (producerRecord);
 
+completableFuture.thenAccept (result -> {
 
+log.info (SUCCESS MESSAGE. formatted (recordName, dealId, result.getRecordMetadata().offset()))
 
+opportunityService.markAsSentToClientLive (dealId);
 
+if (audit != null && (STATE.equals(recordName) || REVERT_STATE.equals(recordName))) {
 
+clientLiveTranscoAuditService.execute(audit);
 
-
-<div class="aggregate-info">
-    <div class="row no-gutters">
-        <div class="col-md-5">
-            <mat-card appearance="outlined" class="mat-elevation-z2">
-                <div class="row d-flex align-items-center">
-                    <div class="col-md-6">
-                        <mat-label>Tranche total amount</mat-label>
-                    </div>
-                    <div class="col-md-6 text-display">
-                        {{trancheTotalAmount}} {{quoteCurrencyCodeIso}}
-                    </div>
-                </div>
-            </mat-card>
-        </div>
-        <div class="col-md-5">
-            <mat-card appearance="outlined" class="mat-elevation-z2">
-                <div class="row d-flex align-items-center">
-                    <div class="col-md-6">
-                        <mat-label>% of deal amount</mat-label>
-                    </div>
-                    <div class="col-md-6 text-display">
-                        {{percentageOfDeal}}%
-                    </div>
-                </div>
-            </mat-card>
-        </div>
-    </div>
-</div>
-
-
-
-
-:host ::ng-deep .mat-tab-label:last-child {
-    opacity: .6;
-    margin-left: inherit;
 }
+
+updateActionAuditService.addNewMessage (messageAudit.ldtStatus (MessageLDTStatus.OK).build());
+
+)).exceptionally (ex -> {
+
+updateActionAuditService.addNewMessage(messageAudit.ldtErrorDetail (ex.getMessage())
+
+.ldtErrorType (MessageLDTErrorType.TECHNICAL ERROR)
+
+.ldtStatus (MessageLDTStatus.KO)
+
+.build());
+
+throw new KafkaRuntimeException (recordName, dealId, ex.getMessage(), (Exception) ex); });
+
+} catch (KafkaException kafkaException) (
+
+updateActionAuditService.addNewMessage (messageAudit.ldtErrorDetail (kafkaException.getMessage ())
+
+.ldtErrorType (MessageLDTErrorType.TECHNICAL ERROR)
+
+.build());
+
+throw new KafkaRuntimeException(recordName, dealId, kafkaException.getMessage(), kafkaException)
+
+
+
+
+
+doAnswer (invocationOnMock -> {
+
+ListenableFutureCallback callback = invocationOnMock.getArgument(0); callback.onSuccess (mockSendResult);
+
+return null;
+
+}).when (mockFuture).exceptionally (any (Function.class));
+
+
+
+var recordName specificRecordBase.getSchema ().getName();
+
+log.debug (SENDING MESSAGE TO KAFKA. formatted (recordName, specificRecordBase));
+
+ProducerRecord<String, SpecificRecordBase> producerRecord new ProducerRecord<>(properties.getTopics Props ().get("name").toString(), String.valueOf(dealld), specificRecordBase);
+
+producer Record.headers().add(TYPE, recordName.getBytes());
+
+var messageAudit MessageAuditCreateInput.builder()
+
+.actionAuditId(actionAuditId)
+
+payload (specificRecordBase.toString())
+
+type (recordName);
+
+try
+
+specificRecordBaseKafkaTemplate.send(producerRecord).addCallback(new ListenableFutureCallback<>() @Override
+
+public void onSuccess (SendResult<String, SpecificRecordBase> result) (
+
+log.info (SUCCESS MESSAGE. formatted (recordName, dealId, result.getRecordMetadata().offset()));
+
+opportunityService.markAsSentToClientLive (dealId);
+
+if (audit != null && (STATE.equals(recordName) || REVERT STATE.equals(recordName))) ( client LiveTranscoAuditService.execute(audit);
+
+}
+
+updateActionAuditService.addNewMessage (messageAudit.ldtStatus (MessageLDTStatus.OK).build()):
+
+@Override
+
+public void onFailure (@NotNull Throwable ex) ( updateActionAuditService.addNewMessage(messageAudit.ldtErrorDetail (ex.getMessage())
+
+1dtErrorType (MessageLDTErrorType.TECHNICAL_ERROR)
+
+IdtStatus (MessageLDTStatus.KO)
+
+.build());
+
+throw new KafkaRuntimeException (recordName, dealId, ex.getMessage(), (Exception) ex);
+
+));
+
+
