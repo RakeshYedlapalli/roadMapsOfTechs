@@ -1,8 +1,105 @@
-[error] HttpErrorAuthUnknown: Unable to authenticate, need: BASIC realm="Sonatype Nexus Repository Manager"
-    at C:\Users\UT3JHA\AppData\Local\Temp\1\angular-cli-packages-i1rNPD\node_modules\npm-registry-fetch\lib\check-response.js:80:17
-    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-    at async RegistryFetcher.packument (C:\Users\UT3JHA\AppData\Local\Temp\1\angular-cli-packages-i1rNPD\node_modules\pacote\lib\registry.js:87:19)
-    at async Promise.all (index 32)
-    at async C:\Users\UT3JHA\AppData\Local\Temp\1\angular-cli-packages-i1rNPD\node_modules\@angular\cli\src\commands\update\schematic\index.js:674:36
-    at async callRuleAsync (C:\Users\UT3JHA\AppData\Local\Temp\1\angular-cli-packages-i1rNPD\node_modules\@angular-devkit\schematics\src\rules\call.js:78:18)
+public void sendMessage(SpecificRecordBase specificRecordBase, Long dealId, EClientLiveTranscoAudit audit, UUID actionAuditId) {
+    var recordName = specificRecordBase.getSchema().getName();
+    log.debug(SENDING_MESSAGE_TO_KAFKA.formatted(recordName, specificRecordBase));
+    ProducerRecord<String, SpecificRecordBase> producerRecord = new ProducerRecord<>(properties.getTopicsProps().get("name").toString(), String.valueOf(dealId), specificRecordBase);
+    producerRecord.headers().add(TYPE, recordName.getBytes());
 
+    var messageAudit = MessageAuditCreateInput.builder()
+        .actionAuditId(actionAuditId)
+        .payload(specificRecordBase.toString())
+        .type(recordName);
+    try {
+      CompletableFuture<SendResult<String, SpecificRecordBase>> completableFuture =
+          specificRecordBaseKafkaTemplate.send(producerRecord);
+
+      completableFuture.thenAccept(result ->  {
+          log.info(SUCCESS_MESSAGE.formatted(recordName, dealId, result.getRecordMetadata().offset()));
+          opportunityService.markAsSentToClientLive(dealId);
+          if (audit != null && (STATE.equals(recordName) || REVERT_STATE.equals(recordName))) {
+            clientLiveTranscoAuditService.execute(audit);
+          }
+          updateActionAuditService.addNewMessage(messageAudit.ldtStatus(MessageLDTStatus.OK).build());
+        }).exceptionally(ex -> {
+        updateActionAuditService.addNewMessage(messageAudit.ldtErrorDetail(ex.getMessage())
+            .ldtErrorType(MessageLDTErrorType.TECHNICAL_ERROR)
+            .ldtStatus(MessageLDTStatus.KO)
+            .build());
+        throw new KafkaRuntimeException(recordName, dealId, ex.getMessage(), (Exception) ex);
+      });
+    } catch (KafkaException kafkaException) {
+      updateActionAuditService.addNewMessage(messageAudit.ldtErrorDetail(kafkaException.getMessage())
+          .ldtErrorType(MessageLDTErrorType.TECHNICAL_ERROR)
+          .build());
+      throw new KafkaRuntimeException(recordName, dealId, kafkaException.getMessage(), kafkaException);
+    }
+  }
+
+
+====================
+
+public void sendMessage(SpecificRecordBase specificRecordBase, Long dealId, EClientLiveTranscoAudit audit, UUID actionAuditId) {
+    var recordName = specificRecordBase.getSchema().getName();
+    log.debug(SENDING_MESSAGE_TO_KAFKA.formatted(recordName, specificRecordBase));
+    ProducerRecord<String, SpecificRecordBase> producerRecord = new ProducerRecord<>(properties.getTopicsProps().get("name").toString(), String.valueOf(dealId), specificRecordBase);
+    producerRecord.headers().add(TYPE, recordName.getBytes());
+
+    var messageAudit = MessageAuditCreateInput.builder()
+        .actionAuditId(actionAuditId)
+        .payload(specificRecordBase.toString())
+        .type(recordName);
+    try {
+      specificRecordBaseKafkaTemplate.send(producerRecord).addCallback(new ListenableFutureCallback<>() {
+        @Override
+        public void onSuccess(SendResult<String, SpecificRecordBase> result) {
+          log.info(SUCCESS_MESSAGE.formatted(recordName, dealId, result.getRecordMetadata().offset()));
+          opportunityService.markAsSentToClientLive(dealId);
+          if (audit != null && (STATE.equals(recordName) || REVERT_STATE.equals(recordName))) {
+            clientLiveTranscoAuditService.execute(audit);
+          }
+          updateActionAuditService.addNewMessage(messageAudit.ldtStatus(MessageLDTStatus.OK).build());
+        }
+
+        @Override
+        public void onFailure(@NotNull Throwable ex) {
+          updateActionAuditService.addNewMessage(messageAudit.ldtErrorDetail(ex.getMessage())
+              .ldtErrorType(MessageLDTErrorType.TECHNICAL_ERROR)
+              .ldtStatus(MessageLDTStatus.KO)
+              .build());
+          throw new KafkaRuntimeException(recordName, dealId, ex.getMessage(), (Exception) ex);
+        }
+      });
+    } catch (KafkaException kafkaException) {
+      updateActionAuditService.addNewMessage(messageAudit.ldtErrorDetail(kafkaException.getMessage())
+          .ldtErrorType(MessageLDTErrorType.TECHNICAL_ERROR)
+          .build());
+      throw new KafkaRuntimeException(recordName, dealId, kafkaException.getMessage(), kafkaException);
+    }
+  }
+
+
+============
+
+@Test
+  @DisplayName("Given Opportunity Should Update And Fail To Deposit")
+  void GivenOpportunityShouldUpdateAndFailToDeposit() {
+    // Arrange
+    List<String> differences = List.of("What.id","Where.id","When.id","Who.id");
+    CreateOpportunity afterCreateOpportunity = (CreateOpportunity) mockedMessages.get(MessageType.CREATE_OPPORTUNITY);
+    Opportunity afterUpdateOpportunity = Instancio.create(Opportunity.class);
+    UUID auditActionId = UUID.randomUUID();
+    when(kafkaMessageCreationService.createMessage(MessageType.CREATE_OPPORTUNITY, afterUpdateOpportunity)).thenReturn(afterCreateOpportunity);
+    when(properties.getTopicsProps()).thenReturn(Map.of("name", MessageType.WHAT.getMessageName()));
+    doThrow(KafkaRuntimeException.class).when(opportunityService).markAsSentToClientLive(anyLong());
+    // Arrange Async context
+    CompletableFuture mockFuture = mock(CompletableFuture.class);
+    given(specificRecordBaseKafkaTemplate.send(any(ProducerRecord.class))).willReturn(mockFuture);
+    doAnswer(invocationOnMock -> {
+      ListenableFutureCallback callback = invocationOnMock.getArgument(0);
+      callback.onFailure(new RuntimeException());
+      return null;
+    }).when(mockFuture).exceptionally(any(Function.class));
+
+    // Act & Assert
+    assertThrows(KafkaRuntimeException.class, () ->     kafkaMessageSendingService.sendUpdateMessage(afterUpdateOpportunity, differences, false, auditActionId));
+    verify(updateActionAuditService, times(1)).addNewMessage(any(MessageAuditCreateInput.class));
+  }
